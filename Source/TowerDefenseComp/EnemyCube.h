@@ -1,6 +1,6 @@
 // Fill out your copyright notice in the Description page of Project Settings.
 
-#pragma once
+/*#pragma once
 
 #include "CoreMinimal.h"
 #include "GameFramework/Pawn.h"
@@ -26,7 +26,7 @@ public:
 	// Called to bind functionality to input
 	virtual void SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent) override;
 
-};
+};*/
 
 /*#pragma once
 
@@ -78,3 +78,35 @@ protected:
 };*/
 
 
+#pragma once
+
+#include "CoreMinimal.h"
+#include "GameFramework/Actor.h"
+#include "EnemyCube.generated.h"
+
+UCLASS()
+class TOWERDEFENSECOMP_API AEnemyCube : public AActor
+{
+    GENERATED_BODY()
+
+public:
+    AEnemyCube();
+
+    // Called to make cube active in game (summoned)
+    UFUNCTION(BlueprintCallable, Category = "Enemy")
+    virtual void ActivateCube();
+
+    // Called to deactivate and return to pool
+    UFUNCTION(BlueprintCallable, Category = "Enemy")
+    virtual void DeactivateCube();
+
+    // Optional: notify PoolManager when it's done (e.g. on "death")
+    UPROPERTY(BlueprintReadWrite, Category = "Enemy")
+    AActor* OwningPoolManager;
+
+protected:
+    virtual void BeginPlay() override;
+
+    // whether currently active
+    bool bIsActive;
+};

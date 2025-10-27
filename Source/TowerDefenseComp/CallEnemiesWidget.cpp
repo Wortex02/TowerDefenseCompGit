@@ -30,7 +30,7 @@ void UCallEnemiesWidget::OnCallButtonClicked()
     {
         if (APlacementPlayerController* MyPC = Cast<APlacementPlayerController>(PC))
         {
-            MyPC->RequestSpawnEnemies();
+            MyPC->RequestSummon();
         }
         else
         {

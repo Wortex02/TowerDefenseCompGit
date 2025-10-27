@@ -10,6 +10,7 @@
 #include "Microsoft/AllowMicrosoftPlatformTypes.h"
 #include "EnemyPoolManager.h" // your pool manager header
 #include "EnemyCube.h"        // your pooled enemy pawn header
+#include "EngineUtils.h"
 #include "Blueprint/UserWidget.h"
 
 void APlacementPlayerController::BeginPlay()
@@ -70,7 +71,7 @@ void APlacementPlayerController::BeginPlay()
 		UE_LOG(LogTemp, Warning, TEXT("APlacementPlayerController: CallWidgetClass not set in editor"));
 	}
 }
-void APlacementPlayerController::SetupInputComponent()
+/*void APlacementPlayerController::SetupInputComponent()
 {
 	Super::SetupInputComponent();
 
@@ -79,14 +80,14 @@ void APlacementPlayerController::SetupInputComponent()
 		// Bind to the trigger state you want (Started/Triggered/Completed/etc.)
 		EIC->BindAction(IA_Place, ETriggerEvent::Started, this, &APlacementPlayerController::PlaceOnClick);
 	}
-}
+}*/
 
 bool APlacementPlayerController::GetGroundHit(FHitResult& OutHit) const
 {
 	return GetHitResultUnderCursor(ECC_Visibility, false, OutHit);
 }
 
-void APlacementPlayerController::PlaceOnClick()
+/*void APlacementPlayerController::PlaceOnClick()
 {
 	if (!SphereClass) return;
 	
@@ -104,10 +105,48 @@ void APlacementPlayerController::PlaceOnClick()
 	const FVector Snapped = GridManager->SnapToGrid(Hit.ImpactPoint);
 	const float  ZOffset  = 50.f;
 	GetWorld()->SpawnActor<AActor>(SphereClass, Snapped + FVector(0,0,ZOffset), FRotator::ZeroRotator);
+}*/
+
+void APlacementPlayerController::RequestSummon()
+{
+	UE_LOG(LogTemp, Log, TEXT("RequestSummon called on client? Role: %d"), (int32)GetLocalRole());
+
+	if (HasAuthority())
+	{
+		// If we are the server, do the summon directly
+		ServerRequestSummon(); // or call the internal server function logic directly
+	}
+	else
+	{
+		// Ask server to do it
+		ServerRequestSummon();
+	}
 }
 
-void APlacementPlayerController::RequestSpawnEnemies(int32 CountOverride /*= -1*/)
+void APlacementPlayerController::ServerRequestSummon_Implementation()
 {
+	UE_LOG(LogTemp, Log, TEXT("ServerRequestSummon_Implementation running on server"));
+
+	// Find PoolManager in the world. A few options: TActorIterator or GetAllActorsOfClass.
+	UWorld* W = GetWorld();
+	if (!W) return;
+
+	for (TActorIterator<AEnemyPoolManager> It(W); It; ++It)
+	{
+		AEnemyPoolManager* PM = *It;
+		if (PM)
+		{
+			PM->SummonFromPool(); // Make sure this runs on server
+			return;
+		}
+	}
+
+	UE_LOG(LogTemp, Warning, TEXT("No PoolManager found when requesting summon"));
+}
+
+
+//void APlacementPlayerController::RequestSpawnEnemies(int32 CountOverride /*= -1*/)
+/*{
 	int32 ToSpawn = (CountOverride > 0) ? CountOverride : SpawnCount;
 
 	// Find the pool manager in the world (there are many ways to get it; this is simple)
@@ -142,4 +181,4 @@ void APlacementPlayerController::RequestSpawnEnemies(int32 CountOverride /*= -1*
 			UE_LOG(LogTemp, Warning, TEXT("RequestSpawnEnemies: Pool returned null (pool exhausted?)"));
 		}
 	}
-}
+}*/

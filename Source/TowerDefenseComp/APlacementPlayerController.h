@@ -38,7 +38,7 @@ public:
 	UUserWidget* CallWidgetInstance;
 
 	// Spawn configuration
-	UPROPERTY(EditAnywhere, Category = "Spawning")
+	/*UPROPERTY(EditAnywhere, Category = "Spawning")
 	int32 SpawnCount = 5;
 
 	UPROPERTY(EditAnywhere, Category = "Spawning")
@@ -49,7 +49,7 @@ public:
 
 	// Called by the widget to request spawning a wave
 	UFUNCTION()
-	void RequestSpawnEnemies(int32 CountOverride = -1);
+	void RequestSpawnEnemies(int32 CountOverride = -1);*/
 
 	/*UPROPERTY(EditAnywhere, Category = "UI")
 	TSubclassOf<UUserWidget> CallWidgetClass;
@@ -57,9 +57,17 @@ public:
 	UPROPERTY()
 	UUserWidget* CallWidgetInstance;*/
 
+	// Called from widget (client). Will route to server if necessary.
+	UFUNCTION(BlueprintCallable, Category = "Summon")
+	void RequestSummon();
+
+	// Server RPC
+	UFUNCTION(Server, Reliable)
+	void ServerRequestSummon();
+
 
 protected:
-	virtual void SetupInputComponent() override;
+	//virtual void SetupInputComponent() override;
 	virtual void BeginPlay() override;
 	
 private:

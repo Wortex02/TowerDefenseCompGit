@@ -1,6 +1,6 @@
 // Fill out your copyright notice in the Description page of Project Settings.
 
-#pragma once
+/*#pragma once
 
 #include "CoreMinimal.h"
 #include "GameFramework/Actor.h"
@@ -48,5 +48,57 @@ protected:
     // Helper
     void PreFillPool();
     AEnemyCube* SpawnAndPrepare();
+};*/
+
+#pragma once
+
+#include "CoreMinimal.h"
+#include "GameFramework/Actor.h"
+#include "EnemyPoolManager.generated.h"
+
+class AEnemyCube;
+class ATargetPoint;
+
+UCLASS()
+class TOWERDEFENSECOMP_API AEnemyPoolManager : public AActor
+{
+    GENERATED_BODY()
+
+public:
+    AEnemyPoolManager();
+
+    virtual void BeginPlay() override;
+
+    // Fill pool at BeginPlay or on demand
+    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Pool")
+    int32 PoolSize = 10;
+
+    // Enemy to spawn
+    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Pool")
+    TSubclassOf<AEnemyCube> EnemyClass;
+
+    // Where pooled enemies initially sit (use TargetPoint in level)
+    UPROPERTY(EditInstanceOnly, BlueprintReadWrite, Category = "Pool")
+    ATargetPoint* PoolMarker;
+
+    // Where to place an enemy when summoned
+    UPROPERTY(EditInstanceOnly, BlueprintReadWrite, Category = "Pool")
+    ATargetPoint* SummonMarker;
+
+    // Summon via Blueprint or C++
+    UFUNCTION(BlueprintCallable, Category = "Pool")
+    AEnemyCube* SummonFromPool();
+
+    // Return to pool (can be called by enemy)
+    UFUNCTION(BlueprintCallable, Category = "Pool")
+    void ReturnToPool(AEnemyCube* Enemy);
+
+protected:
+    UPROPERTY()
+    TArray<AEnemyCube*> Pool;
+
+    // Helper: get an inactive one
+    AEnemyCube* GetInactiveEnemy();
 };
+
 
