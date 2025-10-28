@@ -4,7 +4,7 @@
 #include "EnemyCube.h"
 
 // Sets default values
-/*AEnemyCube::AEnemyCube()
+AEnemyCube::AEnemyCube()
 {
  	// Set this pawn to call Tick() every frame.  You can turn this off to improve performance if you don't need it.
 	PrimaryActorTick.bCanEverTick = true;
@@ -30,7 +30,7 @@ void AEnemyCube::SetupPlayerInputComponent(UInputComponent* PlayerInputComponent
 {
 	Super::SetupPlayerInputComponent(PlayerInputComponent);
 
-}*/
+}
 
 /*#include "EnemyCube.h"
 
@@ -151,44 +151,3 @@ void AEnemyCube::Tick(float Delta)
     TickMovement(Delta);
 }*/
 
-//#include "EnemyCube.h"
-#include "Components/StaticMeshComponent.h"
-
-AEnemyCube::AEnemyCube()
-{
-    PrimaryActorTick.bCanEverTick = true;
-
-    // Example mesh (add your own)
-    UStaticMeshComponent* Mesh = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("Visual"));
-    RootComponent = Mesh;
-
-    bIsActive = false;
-    OwningPoolManager = nullptr;
-}
-
-void AEnemyCube::BeginPlay()
-{
-    Super::BeginPlay();
-    // Start deactivated by default
-    DeactivateCube();
-}
-
-void AEnemyCube::ActivateCube()
-{
-    bIsActive = true;
-    SetActorHiddenInGame(false);
-    SetActorEnableCollision(true);
-    SetActorTickEnabled(true);
-
-    // reset health/AI/whatever here
-}
-
-void AEnemyCube::DeactivateCube()
-{
-    bIsActive = false;
-    SetActorHiddenInGame(true);
-    SetActorEnableCollision(false);
-    SetActorTickEnabled(false);
-
-    // optionally move offscreen; PoolManager may move it
-}

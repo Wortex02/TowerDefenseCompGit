@@ -2,22 +2,22 @@
 
 
 #include "EnemyPoolManager.h"
-/*#include "EnemyCube.h"
+#include "EnemyCube.h"
 #include "Engine/World.h"
 #include "GameFramework/Actor.h"
 
-AEnemyEnemyPoolManager::AEnemyEnemyPoolManager()
+AEnemyPoolManager::AEnemyPoolManager()
 {
     PrimaryActorTick.bCanEverTick = false;
 }
 
-void AEnemyEnemyPoolManager::BeginPlay()
+void AEnemyPoolManager::BeginPlay()
 {
     Super::BeginPlay();
     PreFillPool();
 }
 
-void AEnemyEnemyPoolManager::PreFillPool()
+void AEnemyPoolManager::PreFillPool()
 {
     if (!EnemyClass) return;
     UWorld* W = GetWorld();
@@ -31,7 +31,7 @@ void AEnemyEnemyPoolManager::PreFillPool()
     }
 }
 
-AEnemyCube* AEnemyEnemyPoolManager::SpawnAndPrepare()
+AEnemyCube* AEnemyPoolManager::SpawnAndPrepare()
 {
     if (!EnemyClass) return nullptr;
     UWorld* W = GetWorld();
@@ -53,7 +53,7 @@ AEnemyCube* AEnemyEnemyPoolManager::SpawnAndPrepare()
     return New;
 }
 
-AEnemyCube* AEnemyEnemyPoolManager::GetPooledEnemy()
+AEnemyCube* AEnemyPoolManager::GetPooledEnemy()
 {
     // Find first inactive (hidden) actor
     for (AEnemyCube* E : Pool)
@@ -86,7 +86,7 @@ AEnemyCube* AEnemyEnemyPoolManager::GetPooledEnemy()
     return nullptr; // pool exhausted
 }
 
-void AEnemyEnemyPoolManager::ReturnToPool(AEnemyCube* Enemy)
+void AEnemyPoolManager::ReturnToPool(AEnemyCube* Enemy)
 {
     if (!Enemy) return;
 
@@ -100,90 +100,6 @@ void AEnemyEnemyPoolManager::ReturnToPool(AEnemyCube* Enemy)
     Enemy->SetActorTickEnabled(false);
 
     // Optionally reset more state (health, status effects) is handled by enemy CleanupBeforePool()
-}*/
-
-
-//#include "EnemyPoolManager.h"
-#include "EnemyCube.h"
-#include "Engine/TargetPoint.h"
-#include "Engine/World.h"
-
-AEnemyPoolManager::AEnemyPoolManager()
-{
-    PrimaryActorTick.bCanEverTick = false;
 }
 
-void AEnemyPoolManager::BeginPlay()
-{
-    Super::BeginPlay();
 
-    if (!EnemyClass)
-    {
-        UE_LOG(LogTemp, Warning, TEXT("EnemyPoolManager: EnemyClass not set"));
-        return;
-    }
-
-    // Ensure markers exist (optional)
-    if (!PoolMarker || !SummonMarker)
-    {
-        UE_LOG(LogTemp, Warning, TEXT("EnemyPoolManager: PoolMarker or SummonMarker not set"));
-    }
-
-    // Pre-spawn pool
-    for (int32 i = 0; i < PoolSize; ++i)
-    {
-        FVector SpawnLocation = PoolMarker ? PoolMarker->GetActorLocation() : GetActorLocation();
-        FRotator SpawnRotation = FRotator::ZeroRotator;
-        FActorSpawnParameters Params;
-        Params.Owner = this;
-        AEnemyCube* NewEnemy = GetWorld()->SpawnActor<AEnemyCube>(EnemyClass, SpawnLocation, SpawnRotation, Params);
-        if (NewEnemy)
-        {
-            NewEnemy->OwningPoolManager = this;
-            NewEnemy->DeactivateCube();
-            Pool.Add(NewEnemy);
-        }
-    }
-}
-
-AEnemyCube* AEnemyPoolManager::GetInactiveEnemy()
-{
-    for (AEnemyCube* E : Pool)
-    {
-        if (E && !E->IsActorTickEnabled()) // or check some bIsActive flag
-        {
-            return E;
-        }
-    }
-    return nullptr;
-}
-
-AEnemyCube* AEnemyPoolManager::SummonFromPool()
-{
-    AEnemyCube* Enemy = GetInactiveEnemy();
-    if (!Enemy)
-    {
-        UE_LOG(LogTemp, Warning, TEXT("EnemyPoolManager: No free enemy in pool"));
-        return nullptr;
-    }
-
-    // Move to summon location
-    FVector TargetLocation = SummonMarker ? SummonMarker->GetActorLocation() : GetActorLocation();
-    Enemy->SetActorLocation(TargetLocation);
-    Enemy->ActivateCube();
-
-    // If you want to initialize behavior, you'd call something here, or run a spawn animation
-
-    return Enemy;
-}
-
-void AEnemyPoolManager::ReturnToPool(AEnemyCube* Enemy)
-{
-    if (!Enemy) return;
-    // Move back and deactivate
-    if (PoolMarker)
-    {
-        Enemy->SetActorLocation(PoolMarker->GetActorLocation());
-    }
-    Enemy->DeactivateCube();
-}
