@@ -7,15 +7,11 @@
 		{
 			"Name": "TowerDefenseComp",
 			"Type": "Runtime",
-<<<<<<< HEAD
 			"LoadingPhase": "Default",
 			"AdditionalDependencies": [
 				"Engine",
 				"UMG"
 			]
-=======
-			"LoadingPhase": "Default"
->>>>>>> parent of 3b7872a (gid and stuff not working yet)
 		}
 	],
 	"Plugins": [
