@@ -25,31 +25,49 @@ void ATowerDefenseGameMode::BeginPlay()
             HUDWidgetInstance->AddToViewport();
         }
     }
+    // Only the server/GameMode should create the spawn-point actor.
+    if (SpawnActorClass)
+    {
+        FActorSpawnParameters Params;
+        Params.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AlwaysSpawn;
+        // spawn at the numeric location specified in defaults (you can change this per-game-mode instance if desired)
+        SpawnPointActor = GetWorld()->SpawnActor<AActor>(SpawnActorClass, SpawnLocation, SpawnRotation, Params);
+
+        UE_LOG(LogTemp, Log, TEXT("SpawnPointActor spawned: %s"), SpawnPointActor ? *SpawnPointActor->GetName() : TEXT("null"));
+    }
+    else
+    {
+        UE_LOG(LogTemp, Warning, TEXT("SpawnActorClass not set in GameMode defaults"));
+    }
 }
 
 void ATowerDefenseGameMode::SpawnEnemy()
 {
-    if (!EnemyClass) return;
-
-    FVector SpawnLoc = FVector::ZeroVector;
-    FRotator SpawnRot = FRotator::ZeroRotator;
-
-    if (SpawnPoint)
+    if (!EnemyClass)
     {
-        SpawnLoc = SpawnPoint->GetActorLocation();
-        SpawnRot = SpawnPoint->GetActorRotation();
+        UE_LOG(LogTemp, Warning, TEXT("SpawnEnemy: EnemyClass null"));
+        return;
+    }
+
+    FVector Loc = SpawnLocation;
+    FRotator Rot = SpawnRotation;
+
+    if (SpawnPointActor)
+    {
+        Loc = SpawnPointActor->GetActorLocation();
+        Rot = SpawnPointActor->GetActorRotation();
     }
 
     FActorSpawnParameters Params;
     Params.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AdjustIfPossibleButAlwaysSpawn;
+    APawn* Spawned = GetWorld()->SpawnActor<APawn>(EnemyClass, Loc, Rot, Params);
 
-    GetWorld()->SpawnActor<APawn>(EnemyClass, SpawnLoc, SpawnRot, Params);
+    if (Spawned)
+    {
+        UE_LOG(LogTemp, Log, TEXT("Spawned Enemy at %s"), *Loc.ToString());
+        if (GEngine)
+        {
+            GEngine->AddOnScreenDebugMessage(-1, 2.f, FColor::Green, FString::Printf(TEXT("Spawned Enemy at %s"), *Loc.ToString()));
+        }
+    }
 }
-
-// TowerDefenseGameMode.cpp
-void ATowerDefenseGameMode::SetSpawnPoint(AActor* NewSpawnPoint)
-{
-    SpawnPoint = NewSpawnPoint;
-    UE_LOG(LogTemp, Log, TEXT("SetSpawnPoint called: %s"), SpawnPoint ? *SpawnPoint->GetName() : TEXT("null"));
-}
-

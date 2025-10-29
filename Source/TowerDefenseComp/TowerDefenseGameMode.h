@@ -16,20 +16,27 @@ public:
 
     virtual void BeginPlay() override;
 
-    /** Spawns an enemy at the SpawnPoint or origin if none set */
-    UFUNCTION(BlueprintCallable, Category = "Spawning")
-    void SpawnEnemy();
+    // The actor class that will be spawned and used as the spawn point(assign this in the GameMode defaults)
+	UPROPERTY(EditDefaultsOnly, Category = "Spawning")
+    TSubclassOf<AActor> SpawnActorClass;
 
-    /** Set this in the editor to the Enemy pawn (AEnemyCube or a Blueprint subclass) */
+    // If you want to control the location/rotation numerically in defaults
+    UPROPERTY(EditAnywhere, Category = "Spawning")
+    FVector SpawnLocation = FVector::ZeroVector;
+
+    UPROPERTY(EditAnywhere, Category = "Spawning")
+    FRotator SpawnRotation = FRotator::ZeroRotator;
+
+    // Pointer to the spawned spawn-point actor (null until spawned)
+    UPROPERTY()
+    AActor* SpawnPointActor = nullptr;
+
+    // Enemy class you spawn later
     UPROPERTY(EditDefaultsOnly, Category = "Spawning")
     TSubclassOf<APawn> EnemyClass;
 
-    /** Optional: place an Actor in the level and assign it here to control where enemies spawn */
-    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Spawning")
-    AActor* SpawnPoint;
-
     UFUNCTION(BlueprintCallable, Category = "Spawning")
-    void SetSpawnPoint(AActor* NewSpawnPoint);
+    void SpawnEnemy();
 
 
     /** Widget class to create at BeginPlay (set in editor) */
