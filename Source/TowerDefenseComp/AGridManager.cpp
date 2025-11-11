@@ -10,14 +10,12 @@ AGridManager::AGridManager()
 void AGridManager::BeginPlay()
 {
 	Super::BeginPlay();
-	// Persist lines at runtime
 	DrawGrid();
 }
 
 void AGridManager::OnConstruction(const FTransform& Transform)
 {
 	Super::OnConstruction(Transform);
-	// Also draw in editor
 	DrawGrid();
 }
 
@@ -28,8 +26,7 @@ void AGridManager::DrawGrid() const
 	const float Z = GridZ;
 	const float W = CellsX * GridSize;
 	const float H = CellsY * GridSize;
-
-	// Vertical lines (along Y)
+	
 	for (int32 x = 0; x <= CellsX; ++x)
 	{
 		const float X = Origin.X + x * GridSize;
@@ -38,7 +35,6 @@ void AGridManager::DrawGrid() const
 		DrawDebugLine(GetWorld(), A, B, LineColor, true, 0.f, 0, LineThickness);
 	}
 
-	// Horizontal lines (along X)
 	for (int32 y = 0; y <= CellsY; ++y)
 	{
 		const float Y = Origin.Y + y * GridSize;

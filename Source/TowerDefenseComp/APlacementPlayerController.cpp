@@ -2,10 +2,11 @@
 #include "AGridManager.h"
 #include "ATestTower.h"
 #include "EngineUtils.h"
-
+#include "ShopWidget.h"
+#include "Blueprint/UserWidget.h"
+#include "Components/TextBlock.h"
 #include "EnhancedInputSubsystems.h"
 #include "EnhancedInputComponent.h"
-
 #include "Engine/World.h"
 
 void APlacementPlayerController::BeginPlay()
@@ -32,8 +33,20 @@ void APlacementPlayerController::BeginPlay()
 			}
 		}
 	}
-
 	ResolveGridManager();
+
+	Money = StartingMoney;
+	if (ShopWidgetClass)
+	{
+		ShopWidget = CreateWidget<UShopWidget>(this, ShopWidgetClass);
+		if (ShopWidget)
+		{
+			ShopWidget->AddToViewport(10);
+			ShopWidget->SetItems(ShopItems);
+			ShopWidget->SetMoney(Money);
+			ShopWidget->OnItemClicked.AddDynamic(this, &APlacementPlayerController::OnShopItemClicked);
+		}
+	}
 }
 
 void APlacementPlayerController::SetupInputComponent()
@@ -99,29 +112,75 @@ bool APlacementPlayerController::GetMouseHitOnGrid(FVector& OutHit) const
 			}
 		}
 	}
+	
 	return false;
 }
 
 void APlacementPlayerController::OnPlaceTriggered(const FInputActionInstance&)
 {
-	if (!Grid || !PlaceableClass) return;
+	if (!Grid) return;
 
-	FVector hit;
-	if (!GetMouseHitOnGrid(hit))
+	const FShopItem* Item = GetSelectedItem();
+	if (!Item || !Item->TowerClass)
 	{
-		UE_LOG(LogTemp, Warning, TEXT("GetMouseHitOnGrid(hit) faild"));
+		UE_LOG(LogTemp, Warning, TEXT("No tower selected"));
 		return;
 	}
-	const FIntPoint cell = Grid->WorldToCell(hit);
-	UE_LOG(LogTemp, Warning, TEXT("Placing at cell (%d,%d)"), cell.X, cell.Y);
-
-	if (AActor* a = Grid->TryPlaceAtWorld(PlaceableClass, hit))
+	if (!CanAffordSelected())
 	{
-		UE_LOG(LogTemp, Warning, TEXT("Spawned %s"), *a->GetName());
+		UE_LOG(LogTemp, Warning, TEXT("Not enough money"));
+		return;
+	}
+
+	FVector Hit;
+	if (!GetMouseHitOnGrid(Hit))
+	{
+		UE_LOG(LogTemp, Warning, TEXT("GetMouseHitOnGrid(hit) failed"));
+		return;
+	}
+
+	const FIntPoint Cell = Grid->WorldToCell(Hit);
+	UE_LOG(LogTemp, Warning, TEXT("Placing at cell (%d,%d)"), Cell.X, Cell.Y);
+
+	if (AActor* A = Grid->TryPlaceAtWorld(Item->TowerClass, Hit))
+	{
+		Money -= Item->Cost;
+		UpdateUI();
+		UE_LOG(LogTemp, Warning, TEXT("Spawned %s, Money now: %d"), *A->GetName(), Money);
 	}
 	else
 	{
 		UE_LOG(LogTemp, Warning, TEXT("Blocked (occupied/out of bounds)"));
+	}
+}
+
+void APlacementPlayerController::OnShopItemClicked(int32 Index)
+{
+	if (!ShopItems.IsValidIndex(Index)) return;
+	SelectedIndex = Index;
+	UpdateUI();
+}
+
+const FShopItem* APlacementPlayerController::GetSelectedItem() const
+{
+	return ShopItems.IsValidIndex(SelectedIndex) ? &ShopItems[SelectedIndex] : nullptr;
+}
+
+bool APlacementPlayerController::CanAffordSelected() const
+{
+	if (const FShopItem* Item = GetSelectedItem())
+	{
+		return Money >= Item->Cost && Item->TowerClass != nullptr;
+	}
+	return false;
+}
+
+void APlacementPlayerController::UpdateUI()
+{
+	if (ShopWidget)
+	{
+		ShopWidget->SetSelectedIndex(SelectedIndex);
+		ShopWidget->SetMoney(Money);
 	}
 }
 

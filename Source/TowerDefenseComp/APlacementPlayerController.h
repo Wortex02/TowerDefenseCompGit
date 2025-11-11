@@ -2,6 +2,7 @@
 
 #include "CoreMinimal.h"
 #include "GameFramework/PlayerController.h"
+#include "ShopWidget.h" 
 #include "InputAction.h"
 #include "InputMappingContext.h"
 #include "APlacementPlayerController.generated.h"
@@ -10,6 +11,7 @@
 class UInputMappingContext;
 class UInputAction;
 class AGridManager;
+class UShopWidget;
 
 UCLASS()
 class APlacementPlayerController : public APlayerController
@@ -33,11 +35,31 @@ protected:
 	UPROPERTY(EditDefaultsOnly, Category="Placement")
 	TSubclassOf<AActor> PlaceableClass;
 
+	UPROPERTY(EditDefaultsOnly, Category="UI")
+	TSubclassOf<UShopWidget> ShopWidgetClass;
+	
+	UPROPERTY(EditAnywhere, Category="Money")
+	int StartingMoney = 150;
+	
+	UPROPERTY(EditAnywhere, Category="Shop")
+	TArray<FShopItem> ShopItems;
+
 private:
+	UPROPERTY() UShopWidget* ShopWidget = nullptr;
+	int Money = 0;
+	int SelectedIndex = INDEX_NONE;
+	
 	void OnPlaceTriggered(const struct FInputActionInstance& Instance);
 	void PresedP();
 	bool GetMouseHitOnGrid(FVector& OutHit) const;
 	void ResolveGridManager();
+	
+	UFUNCTION()
+	void OnShopItemClicked(int32 Index);
+	
+	bool CanAffordSelected() const;
+	const FShopItem* GetSelectedItem() const;
+	void UpdateUI();
 };
 
 
