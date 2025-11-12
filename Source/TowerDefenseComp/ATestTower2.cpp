@@ -15,5 +15,8 @@ AATestTower2::AATestTower2()
 	}
 	Mesh->SetCollisionProfileName(TEXT("BlockAll"));
 	Mesh->SetMobility(EComponentMobility::Static);
+
+	// Add a tag to the actor
+	Tags.Add(FName("PathObstacle"));
 }
 
