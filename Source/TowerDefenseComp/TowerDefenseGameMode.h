@@ -6,6 +6,8 @@
 #include "GameFramework/GameModeBase.h"
 #include "TowerDefenseGameMode.generated.h"
 
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnSpawnStateChanged, bool, bCanSpawn);
+
 UCLASS()
 class TOWERDEFENSECOMP_API ATowerDefenseGameMode : public AGameModeBase
 {
@@ -35,13 +37,32 @@ public:
     UPROPERTY(EditDefaultsOnly, Category = "Spawning")
     TSubclassOf<APawn> EnemyClass;
 
+    // Seconds between spawns
+    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Spawning")
+    float SpawnInterval = 0.5f;
+
+    // Broadcasts to UI: bCanSpawn == false -> hide/disable button
+    UPROPERTY(BlueprintAssignable, Category = "Spawning")
+    FOnSpawnStateChanged OnSpawnStateChanged;
+
     UFUNCTION(BlueprintCallable, Category = "Spawning")
-    void SpawnEnemy();
+    void SpawnEnemy(int32 Amount);
 
 
     /** Widget class to create at BeginPlay (set in editor) */
     UPROPERTY(EditDefaultsOnly, Category = "UI")
     TSubclassOf<class UUserWidget> HUDWidgetClass;
+
+private:
+    FTimerHandle SpawnTimerHandle;
+    int32 ToSpawnRemaining = 0;
+    int32 AliveEnemies = 0;
+    bool bIsSpawning = false;
+
+    void SpawnTick();
+    UFUNCTION()
+    void HandleEnemyDestroyed(AActor* DestroyedActor);
+    void UpdateSpawnState();
 
 protected:
     UPROPERTY()

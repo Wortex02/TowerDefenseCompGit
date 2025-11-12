@@ -22,4 +22,8 @@ protected:
 
     UFUNCTION()
     void OnSpawnClicked();
+
+    // Handler for GameMode broadcast
+    UFUNCTION()
+    void HandleSpawnStateChanged(bool bCanSpawn);
 };
