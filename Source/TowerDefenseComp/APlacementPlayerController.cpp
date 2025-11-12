@@ -1,91 +1,191 @@
 #include "APlacementPlayerController.h"
-#include "Kismet/GameplayStatics.h"
 #include "AGridManager.h"
+#include "ATestTower.h"
 #include "EngineUtils.h"
-#include "Camera/CameraActor.h"
-#include "EnhancedInputComponent.h"
+#include "ShopWidget.h"
+#include "Blueprint/UserWidget.h"
+#include "Components/TextBlock.h"
 #include "EnhancedInputSubsystems.h"
-#include "InputAction.h"
-#include "InputMappingContext.h"
-#include "Microsoft/AllowMicrosoftPlatformTypes.h"
+#include "EnhancedInputComponent.h"
+#include "Engine/World.h"
 
 void APlacementPlayerController::BeginPlay()
 {
 	Super::BeginPlay();
+	UE_LOG(LogTemp, Warning, TEXT("PC BeginPlay: %s"), *GetName());
 
-	bShowMouseCursor       = true;
-	bEnableClickEvents     = true;
-	bEnableMouseOverEvents = true;
-	DefaultMouseCursor     = EMouseCursor::Default;
-
-	FInputModeGameAndUI Mode;
-	Mode.SetLockMouseToViewportBehavior(EMouseLockMode::DoNotLock);
-	Mode.SetHideCursorDuringCapture(false);                         
+	FInputModeGameOnly Mode;
 	SetInputMode(Mode);
+	SetShowMouseCursor(true);
+
+	if (!PlaceableClass)
+	{
+		PlaceableClass = AATestTower::StaticClass();
+	}
 	
-	AActor* Target = nullptr;
-
-	if (GameCamera.IsValid())
+	if (ULocalPlayer* LP = Cast<ULocalPlayer>(Player))
 	{
-		Target = GameCamera.Get();
-	}
-	else
-	{
-		for (TActorIterator<ACameraActor> It(GetWorld()); It; ++It)
+		if (UEnhancedInputLocalPlayerSubsystem* InputSystem = LP->GetSubsystem<UEnhancedInputLocalPlayerSubsystem>())
 		{
-			Target = *It;
-			break;
-		}
-	}
-
-	if (Target)
-	{
-		SetViewTargetWithBlend(Target,0.f);
-	}
-	if (ULocalPlayer* LP = GetLocalPlayer())
-	{
-		if (UEnhancedInputLocalPlayerSubsystem* Subsys =
-			LP->GetSubsystem<UEnhancedInputLocalPlayerSubsystem>())
-		{
-			if (IMC_Default)
+			if (!InputMapping.IsNull())
 			{
-				Subsys->AddMappingContext(IMC_Default,0); 
+				InputSystem->AddMappingContext(InputMapping.LoadSynchronous(), 0);
 			}
 		}
 	}
+	ResolveGridManager();
+
+	Money = StartingMoney;
+	if (ShopWidgetClass)
+	{
+		ShopWidget = CreateWidget<UShopWidget>(this, ShopWidgetClass);
+		if (ShopWidget)
+		{
+			ShopWidget->AddToViewport(10);
+			ShopWidget->SetItems(ShopItems);
+			ShopWidget->SetMoney(Money);
+			ShopWidget->OnItemClicked.AddDynamic(this, &APlacementPlayerController::OnShopItemClicked);
+		}
+	}
 }
+
 void APlacementPlayerController::SetupInputComponent()
 {
 	Super::SetupInputComponent();
+	UE_LOG(LogTemp, Warning, TEXT("SetupInputComponent: %s"), *GetName());
 
-	if (UEnhancedInputComponent* EIC = Cast<UEnhancedInputComponent>(InputComponent))
+	if (UEnhancedInputComponent* Input = Cast<UEnhancedInputComponent>(InputComponent))
 	{
-		// Bind to the trigger state you want (Started/Triggered/Completed/etc.)
-		EIC->BindAction(IA_Place, ETriggerEvent::Started, this, &APlacementPlayerController::PlaceOnClick);
+		UE_LOG(LogTemp, Warning, TEXT("EnhancedInputComponent OK"));
+		if (IA_Place)
+		{
+			Input->BindAction(IA_Place, ETriggerEvent::Started, this, &APlacementPlayerController::OnPlaceTriggered);
+			UE_LOG(LogTemp, Warning, TEXT("Bound IA_Place: %s"), *IA_Place->GetName());
+		}
+		else UE_LOG(LogTemp, Error, TEXT("IA_Place is NULL"));
+
+		if (IA_P)
+		{
+			Input->BindAction(IA_P, ETriggerEvent::Started, this, &APlacementPlayerController::PresedP);
+			UE_LOG(LogTemp, Warning, TEXT("Bound IA_P: %s"), *IA_P->GetName());
+		}
+		else UE_LOG(LogTemp, Error, TEXT("IA_P is NULL"));
+	}
+	else
+	{
+		UE_LOG(LogTemp, Error, TEXT("InputComponent is NOT EnhancedInputComponent"));
 	}
 }
 
-bool APlacementPlayerController::GetGroundHit(FHitResult& OutHit) const
+void APlacementPlayerController::ResolveGridManager()
 {
-	return GetHitResultUnderCursor(ECC_Visibility, false, OutHit);
+	if (Grid) return;
+
+	for (TActorIterator<AGridManager> I(GetWorld()); I; ++I)
+	{
+		Grid = *I;
+		break;
+	}
 }
 
-void APlacementPlayerController::PlaceOnClick()
+bool APlacementPlayerController::GetMouseHitOnGrid(FVector& OutHit) const
 {
-	if (!SphereClass) return;
-	
-	if (!GridManager.IsValid())
-	{
-		TArray<AActor*> Found;
-		UGameplayStatics::GetAllActorsOfClass(GetWorld(), AGridManager::StaticClass(), Found);
-		if (Found.Num() > 0) GridManager = Cast<AGridManager>(Found[0]);
-	}
-	if (!GridManager.IsValid()) return;
-
 	FHitResult Hit;
-	if (!GetGroundHit(Hit)) return;
+	if (GetHitResultUnderCursorByChannel(UEngineTypes::ConvertToTraceType(ECC_Visibility), true, Hit))
+	{
+		OutHit = Hit.Location;
+		return true;
+	}
+	
+	if (!Grid) return false;
 
-	const FVector Snapped = GridManager->SnapToGrid(Hit.ImpactPoint);
-	const float  ZOffset  = 50.f;
-	GetWorld()->SpawnActor<AActor>(SphereClass, Snapped + FVector(0,0,ZOffset), FRotator::ZeroRotator);
+	FVector WorldOrigin, WorldDir;
+	if (DeprojectMousePositionToWorld(WorldOrigin, WorldDir))
+	{
+		if (FMath::Abs(WorldDir.Z) > KINDA_SMALL_NUMBER)
+		{
+			const float T = (Grid->GridZ - WorldOrigin.Z) / WorldDir.Z;
+			if (T > 0.f)
+			{
+				OutHit = WorldOrigin + T * WorldDir;
+				return true;
+			}
+		}
+	}
+	
+	return false;
 }
+
+void APlacementPlayerController::OnPlaceTriggered(const FInputActionInstance&)
+{
+	if (!Grid) return;
+
+	const FShopItem* Item = GetSelectedItem();
+	if (!Item || !Item->TowerClass)
+	{
+		UE_LOG(LogTemp, Warning, TEXT("No tower selected"));
+		return;
+	}
+	if (!CanAffordSelected())
+	{
+		UE_LOG(LogTemp, Warning, TEXT("Not enough money"));
+		return;
+	}
+
+	FVector Hit;
+	if (!GetMouseHitOnGrid(Hit))
+	{
+		UE_LOG(LogTemp, Warning, TEXT("GetMouseHitOnGrid(hit) failed"));
+		return;
+	}
+
+	const FIntPoint Cell = Grid->WorldToCell(Hit);
+	UE_LOG(LogTemp, Warning, TEXT("Placing at cell (%d,%d)"), Cell.X, Cell.Y);
+
+	if (AActor* A = Grid->TryPlaceAtWorld(Item->TowerClass, Hit))
+	{
+		Money -= Item->Cost;
+		UpdateUI();
+		UE_LOG(LogTemp, Warning, TEXT("Spawned %s, Money now: %d"), *A->GetName(), Money);
+	}
+	else
+	{
+		UE_LOG(LogTemp, Warning, TEXT("Blocked (occupied/out of bounds)"));
+	}
+}
+
+void APlacementPlayerController::OnShopItemClicked(int32 Index)
+{
+	if (!ShopItems.IsValidIndex(Index)) return;
+	SelectedIndex = Index;
+	UpdateUI();
+}
+
+const FShopItem* APlacementPlayerController::GetSelectedItem() const
+{
+	return ShopItems.IsValidIndex(SelectedIndex) ? &ShopItems[SelectedIndex] : nullptr;
+}
+
+bool APlacementPlayerController::CanAffordSelected() const
+{
+	if (const FShopItem* Item = GetSelectedItem())
+	{
+		return Money >= Item->Cost && Item->TowerClass != nullptr;
+	}
+	return false;
+}
+
+void APlacementPlayerController::UpdateUI()
+{
+	if (ShopWidget)
+	{
+		ShopWidget->SetSelectedIndex(SelectedIndex);
+		ShopWidget->SetMoney(Money);
+	}
+}
+
+void APlacementPlayerController::PresedP()
+{
+	UE_LOG(LogTemp, Warning, TEXT("Pressed P on %s"), *GetName());
+}
+
