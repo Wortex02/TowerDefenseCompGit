@@ -3,7 +3,7 @@
 
 #include "Tower.h"
 #include "Projectile.h"
-#include "Enemy.h"
+#include "EnemyCube.h"
 #include "Components/StaticMeshComponent.h"
 #include "Components/SphereComponent.h"
 #include "Kismet/GameplayStatics.h"
@@ -34,7 +34,7 @@ void ATower::Tick(float DeltaTime)
 
     // Find nearest enemy in range
     TArray<AActor*> OverlappingActors;
-    RangeSphere->GetOverlappingActors(OverlappingActors, AEnemy::StaticClass());
+    RangeSphere->GetOverlappingActors(OverlappingActors, AEnemyCube::StaticClass());
 
     if (OverlappingActors.Num() > 0)
     {
@@ -50,7 +50,7 @@ void ATower::Tick(float DeltaTime)
 void ATower::Shoot()
 {
     TArray<AActor*> OverlappingActors;
-    RangeSphere->GetOverlappingActors(OverlappingActors, AEnemy::StaticClass());
+    RangeSphere->GetOverlappingActors(OverlappingActors, AEnemyCube::StaticClass());
 
     if (OverlappingActors.Num() > 0)
     {
