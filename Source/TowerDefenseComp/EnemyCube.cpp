@@ -6,6 +6,7 @@
 #include "AStarPathfinder.h"
 #include "Kismet/GameplayStatics.h"
 #include "UObject/ConstructorHelpers.h"
+#include "APlacementPlayerController.h"
 
 AEnemyCube::AEnemyCube()
 {
@@ -84,4 +85,14 @@ void AEnemyCube::Tick(float DeltaTime)
     FVector dir = toTarget.GetSafeNormal();
     FVector newLoc = myLoc + dir * MoveSpeed * DeltaTime;
     SetActorLocation(newLoc);
+}
+void AEnemyCube::Destroyed()
+{
+    Super::Destroyed();
+
+    // Get the player controller that owns the shop / money
+    if (APlacementPlayerController* PC = Cast<APlacementPlayerController>(UGameplayStatics::GetPlayerController(this, 0)))
+    {
+        PC->AddMoney(Bounty);
+    }
 }

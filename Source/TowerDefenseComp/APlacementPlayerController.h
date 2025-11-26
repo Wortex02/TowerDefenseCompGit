@@ -17,6 +17,11 @@ UCLASS()
 class APlacementPlayerController : public APlayerController
 {
 	GENERATED_BODY()
+	
+public:
+	UFUNCTION(BlueprintCallable)
+	void AddMoney(int32 Amount);
+	
 protected:
 	virtual void BeginPlay() override;
 	virtual void SetupInputComponent() override;
@@ -60,6 +65,8 @@ private:
 	bool CanAffordSelected() const;
 	const FShopItem* GetSelectedItem() const;
 	void UpdateUI();
+	
+	
 };
 
 

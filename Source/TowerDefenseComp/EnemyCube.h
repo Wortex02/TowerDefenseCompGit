@@ -45,5 +45,11 @@ public:
     UPROPERTY(EditAnywhere, Category = "Movement")
     float WaypointTolerance = 20.f;
 
+    // kill money reward
+    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Reward")
+    int32 Bounty = 10;
+    
     void RequestPathToGoal();
+    
+    virtual void Destroyed() override;
 };

@@ -9,6 +9,7 @@
 #include "EnhancedInputComponent.h"
 #include "Engine/World.h"
 
+
 void APlacementPlayerController::BeginPlay()
 {
 	Super::BeginPlay();
@@ -182,6 +183,12 @@ void APlacementPlayerController::UpdateUI()
 		ShopWidget->SetSelectedIndex(SelectedIndex);
 		ShopWidget->SetMoney(Money);
 	}
+}
+
+void APlacementPlayerController::AddMoney(int32 Amount)
+{
+	Money += Amount;
+	UpdateUI();
 }
 
 void APlacementPlayerController::PresedP()
