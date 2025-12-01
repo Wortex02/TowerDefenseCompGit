@@ -109,6 +109,16 @@ void AEnemyCube::NotifyReachedGoal()
     // Optionally Destroy();
 }
 
+void AEnemyCube::Destroyed()
+{
+    Super::Destroyed();
+
+    // Get the player controller that owns the money
+    if (APlacementPlayerController* PC = Cast<APlacementPlayerController>(UGameplayStatics::GetPlayerController(this, 0)))
+    {
+        PC->AddMoney(Bounty);
+    }
+}
 /*void AEnemyCube::Destroyed()
 {
     Super::Destroyed();
@@ -119,7 +129,7 @@ void AEnemyCube::NotifyReachedGoal()
         bHasNotifiedRemoval = true;
         UE_LOG(LogTemp, Log, TEXT("[%s] Destroyed() fallback notify."), *GetName());
 
-        // Broadcast a "killed" or generic removal event — choose whichever your GameMode expects.
+        // Broadcast a "killed" or generic removal event ï¿½ choose whichever your GameMode expects.
         OnEnemyKilled.Broadcast(this);
         // If you prefer a single generic removal delegate, make one and broadcast here instead.
     }

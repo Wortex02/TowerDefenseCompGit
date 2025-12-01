@@ -66,7 +66,6 @@ private:
 	const FShopItem* GetSelectedItem() const;
 	void UpdateUI();
 	
-	
 };
 
 

@@ -4,7 +4,9 @@
 
 #include "CoreMinimal.h"
 #include "GameFramework/Pawn.h"
+#include "APlacementPlayerController.h"
 #include "EnemyCube.generated.h"
+
 
 class UAStarPathfinder;
 
@@ -22,6 +24,8 @@ protected:
     virtual void BeginPlay() override;
 
 public:
+    void Destroyed();
+
     virtual void Tick(float DeltaTime) override;
 
     // Visual
@@ -31,6 +35,9 @@ public:
     // move speed (units per second)
     UPROPERTY(EditAnywhere, Category = "Movement")
     float MoveSpeed = 300.f;
+
+    // money given on kill
+    float Bounty = 10;
 
     // path and follow index
     TArray<FVector> CurrentPath;
