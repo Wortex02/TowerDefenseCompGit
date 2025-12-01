@@ -6,6 +6,8 @@
 #include "GameFramework/Actor.h"
 #include "Projectile.generated.h"
 
+class AEnemy;
+
 UCLASS()
 class TOWERDEFENSECOMP_API AProjectile : public AActor
 {
@@ -21,17 +23,29 @@ public:
     virtual void Tick(float DeltaTime) override;
 
     // Components
-    UPROPERTY(VisibleAnywhere, BlueprintReadOnly)
+    UPROPERTY(VisibleAnywhere)
     UStaticMeshComponent* MeshComp;
 
-    UPROPERTY(VisibleAnywhere, BlueprintReadOnly)
+    UPROPERTY(VisibleAnywhere)
     class UProjectileMovementComponent* ProjectileMovement;
 
     // Damage
     UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Damage")
     float Damage = 20.f;
 
-    // Overlap function
+    // Target
+    UPROPERTY()
+    AEnemy* TargetEnemy;
+
+    // Pool flag
+    UPROPERTY(VisibleAnywhere)
+    bool bActive = false;
+
+    // Activate / Deactivate
+    void Activate(AEnemy* Target);
+    void Deactivate();
+
+    // Overlap
     UFUNCTION()
     void OnOverlap(UPrimitiveComponent* OverlappedComp, AActor* OtherActor,
         UPrimitiveComponent* OtherComp, int32 OtherBodyIndex,
