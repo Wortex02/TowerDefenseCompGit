@@ -6,7 +6,6 @@
 #include "AStarPathfinder.h"
 #include "Kismet/GameplayStatics.h"
 #include "UObject/ConstructorHelpers.h"
-#include "APlacementPlayerController.h"
 
 AEnemyCube::AEnemyCube()
 {
@@ -86,13 +85,42 @@ void AEnemyCube::Tick(float DeltaTime)
     FVector newLoc = myLoc + dir * MoveSpeed * DeltaTime;
     SetActorLocation(newLoc);
 }
-void AEnemyCube::Destroyed()
+
+void AEnemyCube::NotifyKilled()
+{
+    //if (bHasNotifiedRemoval) return;
+    //bHasNotifiedRemoval = true;
+
+    UE_LOG(LogTemp, Log, TEXT("[%s] NotifyKilled called."), *GetName());
+    OnEnemyKilled.Broadcast(this);
+
+    // If your flow expects kill to destroy the actor, do it here (after broadcasting)
+    // Destroy(); // only call if your other code doesn't already destroy
+}
+
+void AEnemyCube::NotifyReachedGoal()
+{
+    //if (bHasNotifiedRemoval) return;
+    //bHasNotifiedRemoval = true;
+
+    UE_LOG(LogTemp, Log, TEXT("[%s] NotifyReachedGoal called."), *GetName());
+    OnEnemyReachedGoal.Broadcast(this);
+
+    // Optionally Destroy();
+}
+
+/*void AEnemyCube::Destroyed()
 {
     Super::Destroyed();
 
-    // Get the player controller that owns the shop / money
-    if (APlacementPlayerController* PC = Cast<APlacementPlayerController>(UGameplayStatics::GetPlayerController(this, 0)))
+    // If we haven't notified by the time Destroyed() runs, notify as a fallback.
+    if (!bHasNotifiedRemoval)
     {
-        PC->AddMoney(Bounty);
+        bHasNotifiedRemoval = true;
+        UE_LOG(LogTemp, Log, TEXT("[%s] Destroyed() fallback notify."), *GetName());
+
+        // Broadcast a "killed" or generic removal event — choose whichever your GameMode expects.
+        OnEnemyKilled.Broadcast(this);
+        // If you prefer a single generic removal delegate, make one and broadcast here instead.
     }
-}
+}*/

@@ -8,6 +8,8 @@
 
 class UAStarPathfinder;
 
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FEnemyEventSignature, AEnemyCube*, Enemy);
+
 UCLASS()
 class TOWERDEFENSECOMP_API AEnemyCube : public APawn
 {
@@ -45,11 +47,23 @@ public:
     UPROPERTY(EditAnywhere, Category = "Movement")
     float WaypointTolerance = 20.f;
 
-    // kill money reward
-    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Reward")
-    int32 Bounty = 10;
+    // Broadcast when the enemy actually dies (call from your damage/health system)
+    UPROPERTY(BlueprintAssignable, Category = "Events")
+    FEnemyEventSignature OnEnemyKilled;
+
+    // Broadcast when the enemy reaches the goal/endpoint
+    UPROPERTY(BlueprintAssignable, Category = "Events")
+    FEnemyEventSignature OnEnemyReachedGoal;
+
+    // Call this from your existing death logic:
+    UFUNCTION()
+    void NotifyKilled();
     
+
+    // Call this when pathfinding detects the goal reached:
+    UFUNCTION()
+    void NotifyReachedGoal();
+    
+
     void RequestPathToGoal();
-    
-    virtual void Destroyed() override;
 };
