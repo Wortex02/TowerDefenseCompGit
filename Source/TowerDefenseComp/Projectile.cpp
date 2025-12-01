@@ -2,10 +2,10 @@
 
 
 #include "Projectile.h"
-#include "GameFramework/ProjectileMovementComponent.h"
-#include "Components/StaticMeshComponent.h"
 #include "Enemy.h"
-#include "Kismet/GameplayStatics.h"
+#include "Components/StaticMeshComponent.h"
+#include "GameFramework/ProjectileMovementComponent.h"
+#include "Engine/World.h"
 
 AProjectile::AProjectile()
 {
@@ -14,7 +14,6 @@ AProjectile::AProjectile()
     MeshComp = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("MeshComp"));
     RootComponent = MeshComp;
 
-    // Collision
     MeshComp->SetCollisionEnabled(ECollisionEnabled::QueryAndPhysics);
     MeshComp->SetCollisionProfileName(TEXT("OverlapAllDynamic"));
     MeshComp->SetGenerateOverlapEvents(true);
@@ -27,30 +26,67 @@ AProjectile::AProjectile()
     ProjectileMovement->bShouldBounce = false;
 
     InitialLifeSpan = 5.f;
+
+    bActive = false;
 }
 
 void AProjectile::BeginPlay()
 {
     Super::BeginPlay();
+    Deactivate();
 }
 
 void AProjectile::Tick(float DeltaTime)
 {
     Super::Tick(DeltaTime);
+
+    if (bActive && TargetEnemy)
+    {
+        if (!IsValid(TargetEnemy))
+        {
+            Deactivate();
+            return;
+        }
+
+        FVector Dir = (TargetEnemy->GetActorLocation() - GetActorLocation()).GetSafeNormal();
+        ProjectileMovement->Velocity = Dir * ProjectileMovement->InitialSpeed;
+    }
+}
+
+void AProjectile::Activate(AEnemy* Target)
+{
+    bActive = true;
+    TargetEnemy = Target;
+
+    SetActorHiddenInGame(false);
+    SetActorEnableCollision(true);
+    SetActorTickEnabled(true);
+
+    UE_LOG(LogTemp, Warning, TEXT("Projectile ACTIVATED"));
+}
+
+void AProjectile::Deactivate()
+{
+    bActive = false;
+    TargetEnemy = nullptr;
+
+    ProjectileMovement->StopMovementImmediately();
+
+    SetActorHiddenInGame(true);
+    SetActorEnableCollision(false);
+    SetActorTickEnabled(false);
 }
 
 void AProjectile::OnOverlap(UPrimitiveComponent* OverlappedComp, AActor* OtherActor,
     UPrimitiveComponent* OtherComp, int32 OtherBodyIndex,
     bool bFromSweep, const FHitResult& SweepResult)
 {
-    if (OtherActor && OtherActor != this)
+    if (!bActive) return;
+
+    if (AEnemy* Enemy = Cast<AEnemy>(OtherActor))
     {
-        AEnemy* Enemy = Cast<AEnemy>(OtherActor);
-        if (Enemy)
-        {
-            UE_LOG(LogTemp, Warning, TEXT("Projectile hit %s"), *OtherActor->GetName());
-            Enemy->TakeDamage(Damage);
-            Destroy();
-        }
+        UE_LOG(LogTemp, Warning, TEXT("Projectile HIT %s"), *Enemy->GetName());
+        Enemy->TakeDamage(Damage);
+        Deactivate(); // return to pool
     }
 }

@@ -6,6 +6,8 @@
 #include "GameFramework/Actor.h"
 #include "Tower.generated.h"
 
+class AProjectile;
+
 UCLASS()
 class TOWERDEFENSECOMP_API ATower : public AActor
 {
@@ -31,11 +33,20 @@ public:
 
     // Projectile
     UPROPERTY(EditAnywhere, Category = "Combat")
-    TSubclassOf<class AProjectile> ProjectileClass;
+    TSubclassOf<AProjectile> ProjectileClass;
 
     UPROPERTY(EditAnywhere, Category = "Combat")
     float FireRate = 1.f;
 
+    // Pool
+    UPROPERTY(EditAnywhere, Category = "Combat")
+    int32 PoolSize = 1000;
+
 private:
     float LastFireTime = 0.f;
+    TArray<AProjectile*> ProjectilePool;
+
+    AProjectile* GetPooledProjectile();
+    void InitializeProjectilePool();
 };
+
