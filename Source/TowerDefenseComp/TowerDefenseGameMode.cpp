@@ -120,7 +120,7 @@ void ATowerDefenseGameMode::SpawnTick()
         AliveEnemies++;
 
         // Track when it dies; OnDestroyed works for actors that get Destroy() called on death
-        Spawned->OnDestroyed.AddDynamic(this, &ATowerDefenseGameMode::HandleEnemyDestroyed);
+        //Spawned->OnDestroyed.AddDynamic(this, &ATowerDefenseGameMode::HandleEnemyDestroyed);
     }
     else
     {

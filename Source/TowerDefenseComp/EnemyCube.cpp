@@ -6,6 +6,7 @@
 #include "AStarPathfinder.h"
 #include "Kismet/GameplayStatics.h"
 #include "UObject/ConstructorHelpers.h"
+#include "APlacementPlayerController.h"
 
 AEnemyCube::AEnemyCube()
 {
@@ -117,6 +118,11 @@ void AEnemyCube::Destroyed()
     if (APlacementPlayerController* PC = Cast<APlacementPlayerController>(UGameplayStatics::GetPlayerController(this, 0)))
     {
         PC->AddMoney(Bounty);
+    }
+
+	if (ATowerDefenseGameMode* GM = Cast<ATowerDefenseGameMode>(UGameplayStatics::GetPlayerController(this, 0)))
+    {
+        GM->HandleEnemyDestroyd(Self);
     }
 }
 /*void AEnemyCube::Destroyed()

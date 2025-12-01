@@ -5,6 +5,7 @@
 #include "CoreMinimal.h"
 #include "GameFramework/Pawn.h"
 #include "APlacementPlayerController.h"
+#include "TowerDefenseGameMode.h"
 #include "EnemyCube.generated.h"
 
 
@@ -73,4 +74,6 @@ public:
     
 
     void RequestPathToGoal();
+    
+    virtual void Destroyed() override;
 };
