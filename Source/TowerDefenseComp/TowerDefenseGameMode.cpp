@@ -18,6 +18,31 @@ void ATowerDefenseGameMode::BeginPlay()
 {
     Super::BeginPlay();
 
+    SpawnedCount = 0;
+    ActiveEnemies.Empty();
+
+    // If no spawn points were assigned in the editor, try to auto-find them:
+    if (SpawnPoints.Num() == 0)
+    {
+        // 1) Try to find actors tagged "SpawnPoint"
+        TArray<AActor*> FoundByTag;
+        UGameplayStatics::GetAllActorsWithTag(GetWorld(), FName("SpawnPoint"), FoundByTag);
+        if (FoundByTag.Num() > 0)
+        {
+            SpawnPoints = FoundByTag;
+        }
+        else
+        {
+            // 2) Try to find any ATargetPoint actors (useful if you placed TargetPoints)
+            TArray<AActor*> FoundTargets;
+            UGameplayStatics::GetAllActorsOfClass(GetWorld(), ASpawnPoint::StaticClass(), FoundTargets);
+            if (FoundTargets.Num() > 0)
+            {
+                SpawnPoints = FoundTargets;
+            }
+        }
+    }
+
     if (HUDWidgetClass)
     {
         HUDWidgetInstance = CreateWidget<UUserWidget>(GetWorld(), HUDWidgetClass);
@@ -124,6 +149,20 @@ void ATowerDefenseGameMode::HandleEnemyDestroyed(AActor* DestroyedActor)
         bIsSpawning = false;
         UpdateSpawnState();
     }
+
+    if (!DestroyedActor) return;
+    AEnemyCube* Enemy = Cast<AEnemyCube>(DestroyedActor);
+    if (!Enemy) return;
+
+    UE_LOG(LogTemp, Log, TEXT("HandleEnemyDestroyed called for %s"), *Enemy->GetName());
+
+    ActiveEnemies.Remove(Enemy);
+
+    // Also try to unbind the other dynamic delegates (safe even if already removed)
+    Enemy->OnEnemyKilled.RemoveDynamic(this, &ATowerDefenseGameMode::HandleEnemyRemoved);
+    Enemy->OnEnemyReachedGoal.RemoveDynamic(this, &ATowerDefenseGameMode::HandleEnemyRemoved);
+
+    CheckWaveComplete();
 }
 
 void ATowerDefenseGameMode::UpdateSpawnState()
@@ -131,4 +170,128 @@ void ATowerDefenseGameMode::UpdateSpawnState()
     // Allow spawn only when not currently in a spawn-run and no alive enemies exist
     const bool bCanSpawn = (!bIsSpawning && AliveEnemies == 0);
     OnSpawnStateChanged.Broadcast(bCanSpawn);
+}
+
+void ATowerDefenseGameMode::StartWave()
+{
+    if (!EnemyClass)
+    {
+        UE_LOG(LogTemp, Warning, TEXT("TowerDefenseGameMode::StartWave - EnemyClass not set"));
+        return;
+    }
+
+    // Reset
+    SpawnedCount = 0;
+    ActiveEnemies.Empty();
+    GetWorldTimerManager().ClearTimer(SpawnTimerHandle);
+
+    // Spawn first immediately (you can change behavior if you want delay)
+    SpawnNextEnemy();
+
+    // If more to spawn, start periodic timer
+    if (EnemiesPerWave > 1)
+    {
+        GetWorldTimerManager().SetTimer(SpawnTimerHandle, this, &ATowerDefenseGameMode::SpawnNextEnemy, SpawnInterval, true);
+    }
+}
+
+void ATowerDefenseGameMode::SpawnNextEnemy()
+{
+    if (SpawnedCount >= EnemiesPerWave)
+    {
+        GetWorldTimerManager().ClearTimer(SpawnTimerHandle);
+        return;
+    }
+
+    // Choose spawn transform:
+    FTransform SpawnTransform = FTransform::Identity;
+
+    if (SpawnPoints.Num() > 0 && SpawnPoints.IsValidIndex(SpawnedCount % SpawnPoints.Num()) && SpawnPoints[SpawnedCount % SpawnPoints.Num()])
+    {
+        SpawnTransform = SpawnPoints[SpawnedCount % SpawnPoints.Num()]->GetActorTransform();
+    }
+    else
+    {
+        // Fallback: use player pawn transform if available
+        APawn* PlayerPawn = UGameplayStatics::GetPlayerPawn(GetWorld(), 0);
+        if (PlayerPawn)
+        {
+            SpawnTransform = PlayerPawn->GetActorTransform();
+        }
+        else
+        {
+            // Final fallback: keep identity (0,0,0)
+            SpawnTransform = FTransform::Identity;
+        }
+
+        /*if (NewEnemy)
+        {
+            ActiveEnemies.AddUnique(NewEnemy);
+            NewEnemy->OnEnemyKilled.AddUniqueDynamic(this, &ATowerDefenseGameMode::HandleEnemyRemoved);
+            NewEnemy->OnEnemyReachedGoal.AddUniqueDynamic(this, &ATowerDefenseGameMode::HandleEnemyRemoved);
+
+            // Optional: also bind to OnDestroyed as backup
+            NewEnemy->OnDestroyed.AddDynamic(this, &ATowerDefenseGameMode::HandleEnemyDestroyed);
+
+            UE_LOG(LogTemp, Log, TEXT("Spawned %s and bound delegates. Active count: %d"), *NewEnemy->GetName(), ActiveEnemies.Num());
+        }*/
+    }
+
+    AEnemyCube* NewEnemy = SpawnEnemyAtTransform(SpawnTransform);
+    if (NewEnemy)
+    {
+        ActiveEnemies.Add(NewEnemy);
+        NewEnemy->OnEnemyKilled.AddDynamic(this, &ATowerDefenseGameMode::HandleEnemyRemoved);
+        NewEnemy->OnEnemyReachedGoal.AddDynamic(this, &ATowerDefenseGameMode::HandleEnemyRemoved);
+    }
+
+    SpawnedCount++;
+
+    if (SpawnedCount >= EnemiesPerWave)
+    {
+        GetWorldTimerManager().ClearTimer(SpawnTimerHandle);
+        CheckWaveComplete();
+    }
+}
+
+AEnemyCube* ATowerDefenseGameMode::SpawnEnemyAtTransform(const FTransform& Transform)
+{
+    if (!EnemyClass) return nullptr;
+
+    FActorSpawnParameters Params;
+    Params.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AdjustIfPossibleButAlwaysSpawn;
+
+    UWorld* World = GetWorld();
+    if (!World) return nullptr;
+
+    AEnemyCube* Spawned = World->SpawnActorDeferred<AEnemyCube>(EnemyClass, Transform, nullptr, nullptr, ESpawnActorCollisionHandlingMethod::AdjustIfPossibleButAlwaysSpawn);
+    if (Spawned)
+    {
+        // If you need to initialize the enemy (set navpath, health, etc) do it here before finishing spawn
+        UGameplayStatics::FinishSpawningActor(Spawned, Transform);
+    }
+    return Spawned;
+}
+
+void ATowerDefenseGameMode::HandleEnemyRemoved(AEnemyCube* Enemy)
+{
+    if (!Enemy) return;
+
+    // Remove from active list
+    ActiveEnemies.Remove(Enemy);
+
+    // Unbind to be tidy (not strictly necessary if enemy is destroyed)
+    Enemy->OnEnemyKilled.RemoveDynamic(this, &ATowerDefenseGameMode::HandleEnemyRemoved);
+    Enemy->OnEnemyReachedGoal.RemoveDynamic(this, &ATowerDefenseGameMode::HandleEnemyRemoved);
+
+    CheckWaveComplete();
+}
+
+void ATowerDefenseGameMode::CheckWaveComplete()
+{
+    // Wave is complete when we've spawned all enemies and there are no active enemies alive
+    if (SpawnedCount >= EnemiesPerWave && ActiveEnemies.Num() == 0)
+    {
+        OnWaveFinished.Broadcast();
+    }
 }
