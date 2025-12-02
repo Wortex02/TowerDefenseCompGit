@@ -47,6 +47,8 @@ public:
     UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Wave")
     TArray<AActor*> SpawnPoints;
 
+    float HealthMultiplier = 1.f;
+
 protected:
     virtual void BeginPlay() override;
 

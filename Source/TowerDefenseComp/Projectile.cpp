@@ -25,7 +25,7 @@ AProjectile::AProjectile()
     ProjectileMovement->bRotationFollowsVelocity = true;
     ProjectileMovement->bShouldBounce = false;
 
-    InitialLifeSpan = 5.f;
+    InitialLifeSpan = 0.f;
 
     bActive = false;
 }

@@ -135,6 +135,8 @@ void ATowerDefenseGameMode::SpawnNextEnemy()
         // Track via weak ptr (safe if actor gets destroyed)
         ActiveEnemies.AddUnique(TWeakObjectPtr<AEnemyCube>(NewEnemy));
 
+        NewEnemy->CurrentHealth1 = NewEnemy->MaxHealth1 * HealthMultiplier;
+
         // Bind both game-specific and universal destroyed handlers
         NewEnemy->OnEnemyKilled.AddDynamic(this, &ATowerDefenseGameMode::HandleEnemyRemoved);
         NewEnemy->OnEnemyReachedGoal.AddDynamic(this, &ATowerDefenseGameMode::HandleEnemyRemoved);
@@ -231,6 +233,9 @@ void ATowerDefenseGameMode::CheckWaveComplete()
     if (bWaveActive && bAllSpawned && bNoActive)
     {
         bWaveActive = false; // ensure we only broadcast once
+
+        HealthMultiplier = HealthMultiplier * 2; // Making each wave increase in difficulty
+
         UpdateSpawnState();
         UE_LOG(LogTemp, Log, TEXT("Wave finished. Spawned: %d, Active: %d"), SpawnedCount, ActiveEnemies.Num());
         OnWaveFinished.Broadcast();
