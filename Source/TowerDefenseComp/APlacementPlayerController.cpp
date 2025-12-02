@@ -148,6 +148,18 @@ void APlacementPlayerController::OnPlaceTriggered(const FInputActionInstance&)
 		Money -= Item->Cost;
 		UpdateUI();
 		UE_LOG(LogTemp, Warning, TEXT("Spawned %s, Money now: %d"), *A->GetName(), Money);
+
+		const FTransform ObstacleTransform = A->GetActorTransform();
+
+		FActorSpawnParameters Params;
+		Params.SpawnCollisionHandlingOverride =
+			ESpawnActorCollisionHandlingMethod::AlwaysSpawn;
+
+		AActor* Obstacle = GetWorld()->SpawnActor<AActor>(
+			ObstacleClass,
+			ObstacleTransform,
+			Params
+		);
 	}
 	else
 	{

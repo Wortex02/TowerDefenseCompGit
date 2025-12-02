@@ -30,6 +30,23 @@ void AEnemyCube::BeginPlay()
     PathfinderComponent->BuildGrid();
 
     RequestPathToGoal();
+
+    Super::BeginPlay();
+    CurrentHealth1 = MaxHealth1;
+}
+
+void AEnemyCube::TakeDamage(float DamageAmount)
+{
+    CurrentHealth1 -= DamageAmount;
+
+    UE_LOG(LogTemp, Warning, TEXT("%s took %.1f damage, remaining %.1f"),
+        *GetName(), DamageAmount, CurrentHealth1);
+
+    if (CurrentHealth1 <= 0.f)
+    {
+        UE_LOG(LogTemp, Warning, TEXT("%s is destroyed!"), *GetName());
+        Destroy();
+    }
 }
 
 void AEnemyCube::RequestPathToGoal()

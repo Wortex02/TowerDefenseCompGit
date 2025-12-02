@@ -2,7 +2,7 @@
 
 
 #include "Projectile.h"
-#include "Enemy.h"
+#include "EnemyCube.h"
 #include "Components/StaticMeshComponent.h"
 #include "GameFramework/ProjectileMovementComponent.h"
 #include "Engine/World.h"
@@ -53,7 +53,7 @@ void AProjectile::Tick(float DeltaTime)
     }
 }
 
-void AProjectile::Activate(AEnemy* Target)
+void AProjectile::Activate(AEnemyCube* Target)
 {
     bActive = true;
     TargetEnemy = Target;
@@ -83,7 +83,7 @@ void AProjectile::OnOverlap(UPrimitiveComponent* OverlappedComp, AActor* OtherAc
 {
     if (!bActive) return;
 
-    if (AEnemy* Enemy = Cast<AEnemy>(OtherActor))
+    if (AEnemyCube* Enemy = Cast<AEnemyCube>(OtherActor))
     {
         UE_LOG(LogTemp, Warning, TEXT("Projectile HIT %s"), *Enemy->GetName());
         Enemy->TakeDamage(Damage);

@@ -6,7 +6,7 @@
 #include "GameFramework/Actor.h"
 #include "Projectile.generated.h"
 
-class AEnemy;
+class AEnemyCube;
 
 UCLASS()
 class TOWERDEFENSECOMP_API AProjectile : public AActor
@@ -35,14 +35,14 @@ public:
 
     // Target
     UPROPERTY()
-    AEnemy* TargetEnemy;
+    AEnemyCube* TargetEnemy;
 
     // Pool flag
     UPROPERTY(VisibleAnywhere)
     bool bActive = false;
 
     // Activate / Deactivate
-    void Activate(AEnemy* Target);
+    void Activate(AEnemyCube* Target);
     void Deactivate();
 
     // Overlap
