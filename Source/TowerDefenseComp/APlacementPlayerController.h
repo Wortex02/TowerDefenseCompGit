@@ -12,6 +12,7 @@ class UInputMappingContext;
 class UInputAction;
 class AGridManager;
 class UShopWidget;
+class AATestTower;
 
 UCLASS()
 class APlacementPlayerController : public APlayerController
@@ -25,6 +26,9 @@ public:
 protected:
 	virtual void BeginPlay() override;
 	virtual void SetupInputComponent() override;
+
+	UPROPERTY(EditDefaultsOnly, Category = "Placement")
+	TSubclassOf<AActor> ObstacleClass;
 
 	UPROPERTY(EditAnywhere, Category="Input")
 	TSoftObjectPtr<UInputMappingContext> InputMapping;

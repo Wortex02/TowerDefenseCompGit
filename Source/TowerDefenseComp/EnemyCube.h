@@ -29,6 +29,16 @@ public:
 
     virtual void Tick(float DeltaTime) override;
 
+    // Damage function
+    void TakeDamage(float DamageAmount);
+
+    // Health
+    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Health")
+    float MaxHealth1 = 100.f;
+
+    UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Health")
+    float CurrentHealth1;
+
     // Visual
     UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Components")
     UStaticMeshComponent* CubeMesh;

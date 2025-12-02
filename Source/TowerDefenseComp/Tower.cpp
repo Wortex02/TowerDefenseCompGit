@@ -19,6 +19,9 @@ ATower::ATower()
     RangeSphere = CreateDefaultSubobject<USphereComponent>(TEXT("RangeSphere"));
     RangeSphere->SetupAttachment(RootComponent);
     RangeSphere->SetSphereRadius(1000.f);
+
+    // Add a tag to the actor
+    Tags.Add(FName("PathObstacle"));
 }
 
 void ATower::BeginPlay()
@@ -82,7 +85,7 @@ void ATower::Shoot()
 
     if (OverlappingActors.Num() == 0) return;
 
-    AEnemy* Target = Cast<AEnemy>(OverlappingActors[0]);
+    AEnemyCube* Target = Cast<AEnemyCube>(OverlappingActors[0]);
     if (!Target) return;
 
     AProjectile* Projectile = GetPooledProjectile();
