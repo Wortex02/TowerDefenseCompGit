@@ -120,10 +120,6 @@ void AEnemyCube::Destroyed()
         PC->AddMoney(Bounty);
     }
 
-	if (ATowerDefenseGameMode* GM = Cast<ATowerDefenseGameMode>(UGameplayStatics::GetPlayerController(this, 0)))
-    {
-        GM->HandleEnemyDestroyd(Self);
-    }
 }
 /*void AEnemyCube::Destroyed()
 {

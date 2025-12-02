@@ -75,5 +75,4 @@ public:
 
     void RequestPathToGoal();
     
-    virtual void Destroyed() override;
 };

@@ -27,11 +27,14 @@ public:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Grid")
 	float GridZ = 0.f;
 	
-	UPROPERTY(EditAnywhere, Category="Grid|Debug")
+	UPROPERTY(EditAnywhere, Category="Grid")
 	FColor LineColor = FColor::Cyan;
 
-	UPROPERTY(EditAnywhere, Category="Grid|Debug")
+	UPROPERTY(EditAnywhere, Category="Grid")
 	float LineThickness = 5.0f;
+	
+	UPROPERTY(VisibleAnywhere, Category="Grid")
+	UInstancedStaticMeshComponent* GridLineMesh;
 	
 	UFUNCTION(BlueprintCallable, Category="Grid")
 	FIntPoint WorldToCell(const FVector& WorldPos) const;
@@ -56,6 +59,8 @@ private:
 	TSet<FIntPoint> Occupied;
 	
 	void DrawGrid() const;
+	
+	void BuildGrid();
 	
 	bool IsInside(const FIntPoint& Cell) const;
 };
