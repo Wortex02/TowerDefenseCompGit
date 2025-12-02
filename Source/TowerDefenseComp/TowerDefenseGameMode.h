@@ -6,8 +6,9 @@
 #include "GameFramework/GameModeBase.h"
 #include "TowerDefenseGameMode.generated.h"
 
-DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnSpawnStateChanged, bool, bCanSpawn);
+class AEnemyCube;
 
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnSpawnStateChanged, bool, bCanSpawn);
 DECLARE_DYNAMIC_MULTICAST_DELEGATE(FOnWaveFinishedSignature);
 
 UCLASS()
@@ -18,17 +19,19 @@ class TOWERDEFENSECOMP_API ATowerDefenseGameMode : public AGameModeBase
 public:
     ATowerDefenseGameMode();
 
-    //virtual void BeginPlay() override;
-
-    // Call this from the UI widget to start a wave
+    // Call this from UI to start a wave
     UFUNCTION(BlueprintCallable, Category = "Wave")
     void StartWave();
 
-    // Broadcast when wave is fully complete (all spawned and all active enemies gone)
+    // Broadcast when wave fully complete (all spawned and all active enemies gone)
     UPROPERTY(BlueprintAssignable, Category = "Wave")
     FOnWaveFinishedSignature OnWaveFinished;
 
-    // Simple exposed parameters
+    // Broadcasts to UI: bCanSpawn == false -> hide/disable button
+    UPROPERTY(BlueprintAssignable, Category = "Spawning")
+    FOnSpawnStateChanged OnSpawnStateChanged;
+
+    // Enemy class to spawn
     UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Wave")
     TSubclassOf<AEnemyCube> EnemyClass;
 
@@ -40,87 +43,61 @@ public:
     UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Wave")
     float SpawnInterval = 0.5f;
 
-    // Optional: spawn points to fill in the level, set in the editor
+    // Optional spawn points to fill in the level
     UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Wave")
     TArray<AActor*> SpawnPoints;
 
-//protected:
+protected:
     virtual void BeginPlay() override;
 
-//private:
+    // HUD widget class (optional)
+    UPROPERTY(EditDefaultsOnly, Category = "UI")
+    TSubclassOf<class UUserWidget> HUDWidgetClass;
+
+private:
     // Timer & counters
     FTimerHandle SpawnTimerHandle;
     int32 SpawnedCount = 0;
 
     // Active enemies currently alive (or not yet reached goal)
     UPROPERTY()
-    TArray<AEnemyCube*> ActiveEnemies;
+    TArray<TWeakObjectPtr<AEnemyCube>> ActiveEnemies;
 
-    // Spawn a single enemy (called by timer). Can be replaced by your existing spawn logic.
+    // Whether a wave is currently active (spawn run underway or active enemies present)
+    bool bWaveActive = false;
+
+    // Spawn a single enemy (called by timer)
     void SpawnNextEnemy();
 
-    // Handler bound to enemy events
+    // Helper to actually spawn at a transform
+    AEnemyCube* SpawnEnemyAtTransform(const FTransform& Transform);
+
+    // Handlers bound to enemy events
     UFUNCTION()
     void HandleEnemyRemoved(AEnemyCube* Enemy);
 
-    // Check whether the wave is finished
+    UFUNCTION()
+    void HandleEnemyDestroyed(AActor* DestroyedActor);
+
+    // Check whether the wave is finished and broadcast once
     void CheckWaveComplete();
 
-    // Helper to actually spawn at a transform (wrap your existing code here if needed)
-    AEnemyCube* SpawnEnemyAtTransform(const FTransform& Transform);
+    // Update UI spawn-button state
+    void UpdateSpawnState();
 
-    //UFUNCTION()
-    //void HandleEnemyDestroyed(AActor* DestroyedActor);
-
-
-
-    // The actor class that will be spawned and used as the spawn point(assign this in the GameMode defaults)
-	UPROPERTY(EditDefaultsOnly, Category = "Spawning")
+    // Optional: spawn actor class and spawn point actor (kept from your original, still supported)
+    UPROPERTY(EditDefaultsOnly, Category = "Spawning")
     TSubclassOf<AActor> SpawnActorClass;
 
-    // If you want to control the location/rotation numerically in defaults
     UPROPERTY(EditAnywhere, Category = "Spawning")
     FVector SpawnLocation = FVector::ZeroVector;
 
     UPROPERTY(EditAnywhere, Category = "Spawning")
     FRotator SpawnRotation = FRotator::ZeroRotator;
 
-    // Pointer to the spawned spawn-point actor (null until spawned)
     UPROPERTY()
     AActor* SpawnPointActor = nullptr;
 
-    // Enemy class you spawn later
-    //UPROPERTY(EditDefaultsOnly, Category = "Spawning")
-    //TSubclassOf<APawn> EnemyClass;
-
-    // Seconds between spawns
-    //UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Spawning")
-    //float SpawnInterval = 0.5f;
-
-    // Broadcasts to UI: bCanSpawn == false -> hide/disable button
-    UPROPERTY(BlueprintAssignable, Category = "Spawning")
-    FOnSpawnStateChanged OnSpawnStateChanged;
-
-    UFUNCTION(BlueprintCallable, Category = "Spawning")
-    void SpawnEnemy(int32 Amount);
-
-
-    /** Widget class to create at BeginPlay (set in editor) */
-    UPROPERTY(EditDefaultsOnly, Category = "UI")
-    TSubclassOf<class UUserWidget> HUDWidgetClass;
-
-//private:
-    //FTimerHandle SpawnTimerHandle;
-    int32 ToSpawnRemaining = 0;
-    int32 AliveEnemies = 0;
-    bool bIsSpawning = false;
-
-    void SpawnTick();
-    UFUNCTION()
-    void HandleEnemyDestroyed(AActor* DestroyedActor);
-    void UpdateSpawnState();
-
-protected:
     UPROPERTY()
-    UUserWidget* HUDWidgetInstance;
+    UUserWidget* HUDWidgetInstance = nullptr;
 };
