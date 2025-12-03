@@ -31,9 +31,6 @@ public:
         //void NotifyReachedGoal();
 
     // In your actor's header
-    UPROPERTY()
-    UHealthBar* HealthWidgetComponent;
-
 
 protected:
     virtual void BeginPlay() override;

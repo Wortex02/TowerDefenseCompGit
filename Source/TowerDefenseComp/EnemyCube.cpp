@@ -8,6 +8,7 @@
 #include "Kismet/GameplayStatics.h"
 #include "UObject/ConstructorHelpers.h"
 #include "APlacementPlayerController.h"
+#include "Blueprint/WidgetBlueprintLibrary.h"
 
 AEnemyCube::AEnemyCube()
 {
@@ -142,14 +143,22 @@ void AEnemyCube::NotifyReachedGoal()
     UE_LOG(LogTemp, Log, TEXT("[%s] NotifyReachedGoal called."), *GetName());
     OnEnemyReachedGoal.Broadcast(this);
 
-   
-    if (HealthWidgetComponent)
+    TArray<UUserWidget*> FoundWidgets;
+    UWidgetBlueprintLibrary::GetAllWidgetsOfClass(GetWorld(),FoundWidgets,
+        UHealthBar::StaticClass(),false
+    );
+
+    // 2. Call ReduceHealth
+    for (UUserWidget* Widget : FoundWidgets)
     {
-        HealthWidgetComponent->ReduceHealth();
+        if (UHealthBar* HealthWidget = Cast<UHealthBar>(Widget))
+        {
+            HealthWidget->ReduceHealth();   // calls the BP function in WBP_HealthBar
+        }
     }
     
     //GetActorClassDefaultComponentByName(UHealthBar)
-    // Optionally Destroy();
+    Destroy();
 }
 
 void AEnemyCube::Destroyed()

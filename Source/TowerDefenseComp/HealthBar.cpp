@@ -2,7 +2,3 @@
 
 
 #include "HealthBar.h"
-
-void UHealthBar::ReduceHealth()
-{
-}
