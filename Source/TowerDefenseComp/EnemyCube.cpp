@@ -156,6 +156,11 @@ void AEnemyCube::NotifyReachedGoal()
             HealthWidget->ReduceHealth();   // calls the BP function in WBP_HealthBar
         }
     }
+
+    if (APlacementPlayerController* PC = Cast<APlacementPlayerController>(UGameplayStatics::GetPlayerController(this, 0)))
+    {
+        PC->AddMoney(-Bounty);
+    }
     
     //GetActorClassDefaultComponentByName(UHealthBar)
     Destroy();
