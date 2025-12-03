@@ -4,6 +4,7 @@
 #include "EnemyCube.h"
 #include "Components/StaticMeshComponent.h"
 #include "AStarPathfinder.h"
+#include "HealthBar.h"
 #include "Kismet/GameplayStatics.h"
 #include "UObject/ConstructorHelpers.h"
 #include "APlacementPlayerController.h"
@@ -23,6 +24,12 @@ AEnemyCube::AEnemyCube()
     }
 }
 
+/*void AEnemyCube::MoveAlongPath(const TArray<FVector>& Path)
+{
+    CurrentPath = Path;
+    CurrentIndex = 0;
+}*/
+
 void AEnemyCube::BeginPlay()
 {
     Super::BeginPlay();
@@ -31,7 +38,6 @@ void AEnemyCube::BeginPlay()
 
     RequestPathToGoal();
 
-    Super::BeginPlay();
     CurrentHealth1 = MaxHealth1;
 }
 
@@ -87,15 +93,27 @@ void AEnemyCube::Tick(float DeltaTime)
     FVector myLoc = GetActorLocation();
     FVector target = CurrentPath[PathIndex];
 
+    //NotifyReachedGoal();
+
     // move toward target in XY plane, preserve Z
     FVector toTarget = target - myLoc;
     toTarget.Z = 0;
     float dist = toTarget.Size();
+
     if (dist <= WaypointTolerance)
     {
         // snap and advance
         SetActorLocation(FVector(target.X, target.Y, myLoc.Z));
         PathIndex++;
+
+        // If we advanced past the last waypoint, we've reached the goal
+        if (PathIndex >= CurrentPath.Num())
+        {
+            NotifyReachedGoal();
+            CurrentPath.Empty(); // stop following
+            PathIndex = 0;
+        }
+
         return;
     }
 
@@ -124,6 +142,13 @@ void AEnemyCube::NotifyReachedGoal()
     UE_LOG(LogTemp, Log, TEXT("[%s] NotifyReachedGoal called."), *GetName());
     OnEnemyReachedGoal.Broadcast(this);
 
+   
+    if (HealthWidgetComponent)
+    {
+        HealthWidgetComponent->ReduceHealth();
+    }
+    
+    //GetActorClassDefaultComponentByName(UHealthBar)
     // Optionally Destroy();
 }
 

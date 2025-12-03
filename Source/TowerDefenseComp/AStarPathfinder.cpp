@@ -1,39 +1,8 @@
 // Fill out your copyright notice in the Description page of Project Settings.
 
 
-/*#include "AStarPathfinder.h"
-
-// Sets default values for this component's properties
-UAStarPathfinder::UAStarPathfinder()
-{
-	// Set this component to be initialized when the game starts, and to be ticked every frame.  You can turn these features
-	// off to improve performance if you don't need them.
-	PrimaryComponentTick.bCanEverTick = true;
-
-	// ...
-}
-
-
-// Called when the game starts
-void UAStarPathfinder::BeginPlay()
-{
-	Super::BeginPlay();
-
-	// ...
-	
-}
-
-
-// Called every frame
-void UAStarPathfinder::TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction)
-{
-	Super::TickComponent(DeltaTime, TickType, ThisTickFunction);
-
-	// ...
-}*/
-
-// AStarPathfinder.cpp
 #include "AStarPathfinder.h"
+#include "EnemyCube.h"
 #include "Kismet/GameplayStatics.h"
 #include "Engine/World.h"
 #include "GameFramework/Actor.h"
@@ -207,6 +176,13 @@ bool UAStarPathfinder::FindPath(const FVector& StartWorld, const FVector& GoalWo
             {
                 OutPath.Add(GridToWorldCenter(rev[i]));
             }
+            // before returning true, give the path to the owner (if owner is Enemy)
+            /*if (AEnemyCube* OwnerEnemy = Cast<AEnemyCube>(GetOwner()))
+            {
+                OwnerEnemy->MoveAlongPath(OutPath); // pass the path to the enemy to follow
+            }*/
+            //return true;
+
             return true;
         }
 

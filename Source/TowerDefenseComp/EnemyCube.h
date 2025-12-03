@@ -8,6 +8,8 @@
 #include "TowerDefenseGameMode.h"
 #include "EnemyCube.generated.h"
 
+class HealthBar;
+
 
 class UAStarPathfinder;
 
@@ -20,6 +22,18 @@ class TOWERDEFENSECOMP_API AEnemyCube : public APawn
 
 public:
     AEnemyCube();
+
+    // called by pathfinder to start moving
+    void MoveAlongPath(const TArray<FVector>& Path);
+
+    // called when the actor actually reaches the goal
+    //UFUNCTION(BlueprintCallable) // optional if you want to call it from blueprints
+        //void NotifyReachedGoal();
+
+    // In your actor's header
+    UPROPERTY()
+    UHealthBar* HealthWidgetComponent;
+
 
 protected:
     virtual void BeginPlay() override;
@@ -84,5 +98,10 @@ public:
     
 
     void RequestPathToGoal();
+
+private:
+    //TArray<FVector> CurrentPath;
+    int32 CurrentIndex = 0;
+    float AcceptanceRadius = 50.f; // tweak as needed
     
 };
